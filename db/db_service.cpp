@@ -126,9 +126,10 @@ std::vector<Game> DbService::getGamesByPlayer(int64_t tg_id)
         pqxx::work tx{conn};
 
         pqxx::result res = tx.exec_params(
-            "SELECT id, first_player_tg, second_player_tg, status "
+            "SELECT id, first_player_tg, second_player_tg, status, board "
             "FROM games "
-            "WHERE first_player_tg = $1 OR second_player_tg = $1 "
+            "WHERE (first_player_tg = $1 OR second_player_tg = $1) "
+            "AND status IN ('pending', 'active') "
             "ORDER BY id DESC",
             tg_id);
 
@@ -139,6 +140,7 @@ std::vector<Game> DbService::getGamesByPlayer(int64_t tg_id)
             game.first_player_tg = row["first_player_tg"].as<int64_t>();
             game.second_player_tg = row["second_player_tg"].as<int64_t>();
             game.status = row["status"].as<std::string>();
+            game.board = row["board"].as<std::string>();
             games.push_back(game);
         }
     }
@@ -262,4 +264,48 @@ std::vector<HistoryRecord> DbService::getHistoryByPlayer(int64_t player_tg)
     }
 
     return historyRecords;
+}
+
+bool DbService::updateGameBoard(int game_id, const std::string& board)
+{
+    try
+    {
+        pqxx::connection& conn = db_->getConnection();
+        pqxx::work tx{conn};
+
+        tx.exec_params(
+            "UPDATE games SET board = $1 "
+            "WHERE id = $2",
+            board, game_id);
+
+        tx.commit();
+        return true;
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "Error updating game board: " << e.what() << std::endl;
+        return false;
+    }
+}
+
+void DbService::addMoveRecord(int game_id, int64_t player_tg, int column)
+{
+    try
+    {
+        pqxx::connection& conn = db_->getConnection();
+        pqxx::work tx{conn};
+
+        std::string result = "move:" + std::to_string(column);
+
+        tx.exec_params(
+            "INSERT INTO history (game_id, player_tg, result) "
+            "VALUES ($1, $2, $3)",
+            game_id, player_tg, result);
+
+        tx.commit();
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "Error adding move record: " << e.what() << std::endl;
+    }
 }

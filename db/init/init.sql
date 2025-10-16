@@ -9,7 +9,8 @@ CREATE TABLE IF NOT EXISTS games (
   id               SERIAL PRIMARY KEY,
   first_player_tg  BIGINT NOT NULL REFERENCES users(tg_id) ON DELETE CASCADE,
   second_player_tg BIGINT NOT NULL REFERENCES users(tg_id) ON DELETE CASCADE,
-  status           VARCHAR(32) DEFAULT 'pending'
+  status           VARCHAR(32) DEFAULT 'pending',
+  board VARCHAR(42) DEFAULT '...........................................'
 );
 
 CREATE INDEX IF NOT EXISTS idx_games_first_player_tg ON games(first_player_tg);
