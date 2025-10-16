@@ -309,3 +309,40 @@ void DbService::addMoveRecord(int game_id, int64_t player_tg, int column)
         std::cerr << "Error adding move record: " << e.what() << std::endl;
     }
 }
+
+std::optional<Game> DbService::getActiveGameByPlayers(int64_t first_player_tg, int64_t second_player_tg)
+{
+    try
+    {
+        pqxx::connection& conn = db_->getConnection();
+        pqxx::work tx{conn};
+
+        pqxx::result res = tx.exec_params(
+            "SELECT id, first_player_tg, second_player_tg, stauts, board "
+            "FROM games "
+            "WHERE ((first_player_tg = $1 AND second_player_tg = $2) "
+            "       OR (first_player_tg = $2 AND second_player_tg = $1)) "
+            "AND status IN ('pending', 'active') "
+            "ORDER BY id DESC LIMIT 1",
+            first_player_tg, second_player_tg);
+
+        if (res.empty())
+        {
+            return std::nullopt;
+        }
+
+        Game game;
+        game.id = res[0]["id"].as<int>();
+        game.first_player_tg = res[0]["first_player_tg"].as<int64_t>();
+        game.second_player_tg = res[0]["second_player_tg"].as<int64_t>();
+        game.status = res[0]["status"].as<std::string>();
+        game.board = res[0]["board"].is_null() ? std::string() : res[0]["board"].as<std::string>();
+
+        return game;
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "Error getting active game by players: " << e.what() << std::endl;
+        return std::nullopt;
+    }
+}

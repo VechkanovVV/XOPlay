@@ -45,6 +45,7 @@ class DbService
     bool updateGameStatus(int game_id, const std::string& status);
     std::vector<Game> getGamesByPlayer(int64_t tg_id);
     std::optional<Game> getGameById(int64_t game_id);
+    std::optional<Game> getActiveGameByPlayers(int64_t first_player_tg, int64_t second_player_tg);
 
     void addHistoryRecord(int game_id, int64_t player_tg, const std::string& result);
     std::vector<HistoryRecord> getHistoryByGame(int game_id);
