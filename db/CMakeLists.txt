@@ -5,6 +5,7 @@ pkg_check_modules(LIBPQXX REQUIRED libpqxx)
 
 add_library(Database
     db.cpp
+    db_service.cpp
 )
 
 target_include_directories(Database

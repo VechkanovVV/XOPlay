@@ -49,6 +49,7 @@ std::optional<User> DbService::getUserById(int64_t id)
             id);
         if (result.empty())
         {
+            tx.commit();
             return std::nullopt;
         }
 
@@ -58,6 +59,7 @@ std::optional<User> DbService::getUserById(int64_t id)
         user.first_name = result[0]["first_name"].as<std::string>();
         user.last_name = result[0]["last_name"].as<std::string>();
 
+        tx.commit();
         return user;
     }
     catch (const std::exception& e)
@@ -328,6 +330,7 @@ std::optional<Game> DbService::getActiveGameByPlayers(int64_t first_player_tg, i
 
         if (res.empty())
         {
+            tx.commit();
             return std::nullopt;
         }
 
@@ -338,6 +341,7 @@ std::optional<Game> DbService::getActiveGameByPlayers(int64_t first_player_tg, i
         game.status = res[0]["status"].as<std::string>();
         game.board = res[0]["board"].is_null() ? std::string() : res[0]["board"].as<std::string>();
 
+        tx.commit();
         return game;
     }
     catch (const std::exception& e)

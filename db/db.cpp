@@ -2,22 +2,23 @@
 
 #include <iostream>
 
-Database::Database(const std::string& connection)
+Database::Database(const std::string& connection_string) : connection_string_(connection_string), connected_(false)
 {
     try
     {
-        conn_ = std::make_unique<pqxx::connection>(connection);
+        pqxx::connection test_conn(connection_string_);
+        connected_ = test_conn.is_open();
     }
     catch (const std::exception& e)
     {
         std::cerr << "Database connection error: " << e.what() << std::endl;
-        conn_.reset();
+        connected_ = false;
     }
 }
 
 bool Database::isConnected() const
 {
-    return conn_ && conn_->is_open();
+    return connected_.load();
 }
 
 void Database::executeQuery(const std::string& query)
@@ -29,7 +30,8 @@ void Database::executeQuery(const std::string& query)
 
     try
     {
-        pqxx::work txn{*conn_};
+        pqxx::connection& conn = getConnection();
+        pqxx::work txn{conn};
         txn.exec(query);
         txn.commit();
     }
@@ -41,9 +43,10 @@ void Database::executeQuery(const std::string& query)
 
 pqxx::connection& Database::getConnection()
 {
-    if (!conn_ || !conn_->is_open())
+    thread_local std::unique_ptr<pqxx::connection> thread_conn;
+    if (!thread_conn || !thread_conn->is_open())
     {
-        throw std::runtime_error("Database connection not available");
+        thread_conn = std::make_unique<pqxx::connection>(connection_string_);
     }
-    return *conn_;
+    return *thread_conn;
 }

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <atomic>
 #include <memory>
 #include <pqxx/pqxx>
 #include <string>
@@ -17,5 +18,6 @@ class Database final
     pqxx::connection& getConnection();
 
    private:
-    std::unique_ptr<pqxx::connection> conn_;
+    std::string connection_string_;
+    std::atomic<bool> connected_;
 };
