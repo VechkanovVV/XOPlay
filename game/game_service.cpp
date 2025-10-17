@@ -22,13 +22,17 @@ int GameService::createGame(int64_t player1_id, int64_t player2_id)
         throw std::runtime_error("One or both players do not exist");
     }
 
-    return db_->createGame(player1_id, player2_id);
+    int game_id = db_->createGame(player1_id, player2_id);
+    auto gameData = db_->getGameById(game_id);
+    auto game = std::make_shared<GameLogic>(game_id, gameData->first_player_tg, gameData->second_player_tg);
+    cacheGame(game, player1_id, player2_id);
+    return game_id;
 }
 
-std::shared_ptr<GameLogic> GameService::getOrCreateGameInCache(int game_id)
+std::shared_ptr<GameLogic> GameService::getActiveGameById(int game_id)
 {
-    auto it = active_games_cache_.find(game_id);
-    if (it != active_games_cache_.end())
+    auto it = gamesById_.find(game_id);
+    if (it != gamesById_.end())
     {
         return it->second;
     }
@@ -46,13 +50,15 @@ std::shared_ptr<GameLogic> GameService::getOrCreateGameInCache(int game_id)
         game->setBoardFromString(gameData->board);
     }
 
-    active_games_cache_[game_id] = game;
+    gamesById_[game_id] = game;
+    gamesByUser_[gameData->first_player_tg] = game;
+    gamesByUser_[gameData->second_player_tg] = game;
     return game;
 }
 
 std::optional<std::shared_ptr<GameLogic>> GameService::getGame(int game_id)
 {
-    auto game = getOrCreateGameInCache(game_id);
+    auto game = getActiveGameById(game_id);
     if (!game)
     {
         return std::nullopt;
@@ -62,7 +68,7 @@ std::optional<std::shared_ptr<GameLogic>> GameService::getGame(int game_id)
 
 bool GameService::makeMove(int game_id, int64_t player_id, int column)
 {
-    auto game = getOrCreateGameInCache(game_id);
+    auto game = getActiveGameById(game_id);
     if (!game)
     {
         return false;
@@ -98,7 +104,7 @@ bool GameService::makeMove(int game_id, int64_t player_id, int column)
         db_->updateGameStatus(game_id, "finished");
         db_->addHistoryRecord(game_id, player_id, "win");
 
-        active_games_cache_.erase(game_id);
+        removeGameFromCache(game_id, gameData->first_player_tg, gameData->second_player_tg);
         return true;
     }
 
@@ -107,7 +113,7 @@ bool GameService::makeMove(int game_id, int64_t player_id, int column)
         db_->updateGameStatus(game_id, "draw");
         db_->addHistoryRecord(game_id, 0, "draw");
 
-        active_games_cache_.erase(game_id);
+        removeGameFromCache(game_id, gameData->first_player_tg, gameData->second_player_tg);
         return true;
     }
 
@@ -146,7 +152,7 @@ bool GameService::isGameOver(int game_id, int64_t& winner_id)
 
 std::string GameService::renderGameBoard(int game_id)
 {
-    auto game = getOrCreateGameInCache(game_id);
+    auto game = getActiveGameById(game_id);
     if (!game)
     {
         throw std::runtime_error("Game not found");
@@ -157,7 +163,7 @@ std::string GameService::renderGameBoard(int game_id)
 
 bool GameService::isPlayerTurn(int game_id, int64_t player_id)
 {
-    auto game = getOrCreateGameInCache(game_id);
+    auto game = getActiveGameById(game_id);
     if (!game)
     {
         return false;
@@ -207,7 +213,51 @@ bool GameService::abandonGame(int game_id, int64_t player_id)
     db_->addHistoryRecord(game_id, player_id, "abandon");
     db_->addHistoryRecord(game_id, winner_id, "win");
 
-    active_games_cache_.erase(game_id);
+    removeGameFromCache(game_id, gameData->first_player_tg, gameData->second_player_tg);
 
     return true;
+}
+
+std::optional<std::shared_ptr<GameLogic>> GameService::getUserActiveGame(int64_t tgId)
+{
+    auto game = getActiveGameByUser(tgId);
+    if (!game)
+    {
+        return std::nullopt;
+    }
+    return game;
+}
+
+std::shared_ptr<GameLogic> GameService::getActiveGameByUser(int64_t user_id)
+{
+    auto it = gamesByUser_.find(user_id);
+    if (it != gamesByUser_.end())
+    {
+        return it->second;
+    }
+
+    auto games = db_->getGamesByPlayer(user_id);
+    for (const auto& gameData : games)
+    {
+        if (gameData.status == "active" || gameData.status == "pending")
+        {
+            return getActiveGameById(gameData.id);
+        }
+    }
+
+    return nullptr;
+}
+
+void GameService::cacheGame(const std::shared_ptr<GameLogic>& game, int64_t player1_id, int64_t player2_id)
+{
+    gamesById_[game->getId()] = game;
+    gamesByUser_[player1_id] = game;
+    gamesByUser_[player2_id] = game;
+}
+
+void GameService::removeGameFromCache(int game_id, int64_t player1_id, int64_t player2_id)
+{
+    gamesById_.erase(game_id);
+    gamesByUser_.erase(player1_id);
+    gamesByUser_.erase(player2_id);
 }
