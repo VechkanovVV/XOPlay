@@ -22,12 +22,12 @@ class TaskManager final
 
     void stop();
 
-    void addStartGameTask(StartGameParams& params);
-    void addStopGameTask(const StopGameParams& params);
-    void addMakeMoveTask(const MakeMoveParams& params);
-    void addSendMessageTask(const SendMessageParams& params);
-    void addGetHistoryTask(const GetHistoryParams& params);
-    void addHelpTask(const HelpParams& params);
+    void addStartGameTask(StartGameParams params);
+    void addStopGameTask(StopGameParams params);
+    void addMakeMoveTask(MakeMoveParams params);
+    void addSendMessageTask(SendMessageParams params);
+    void addGetHistoryTask(GetHistoryParams params);
+    void addHelpTask(HelpParams params);
 
    private:
     std::shared_ptr<DbService> db_;
@@ -40,6 +40,9 @@ class TaskManager final
     std::atomic<bool> running_;
 
     std::thread worker_;
+    std::mutex registrationMutex_;
 
     void addTask(std::shared_ptr<Task> task);
+    void ensureUserRegistered(int64_t user_id, const std::string& username = "unknown",
+                              const std::string& first_name = "unknown", const std::string& last_name = "unknown");
 };

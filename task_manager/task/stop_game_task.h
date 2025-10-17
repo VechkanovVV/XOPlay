@@ -16,7 +16,7 @@ class StopGameTask final : public Task
 
         if (!gameOpt)
         {
-            params_.callback("There is no active game", params_.player_id);
+            params_.callback("[There is no active game]", params_.player_id);
             return;
         }
 
@@ -28,12 +28,12 @@ class StopGameTask final : public Task
 
         if (success)
         {
-            params_.callback("Game finished, you lose", params_.player_id);
-            params_.callback("Game finished, you win", opId);
+            params_.callback("[Game finished, you lose]", params_.player_id);
+            params_.callback("[Game finished, you win]", opId);
         }
         else
         {
-            params_.callback("Failed to abandon the game", params_.player_id);
+            params_.callback("[Failed to abandon the game]", params_.player_id);
         }
     }
 

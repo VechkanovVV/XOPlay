@@ -17,7 +17,7 @@ class MakeMoveTask final : public Task
         {
             if (params_.callback)
             {
-                params_.callback(false, "There is no active game", nullptr);
+                params_.callback(false, "[There is no active game]", nullptr);
             }
             return;
         }
@@ -33,17 +33,16 @@ class MakeMoveTask final : public Task
                 auto gameResult = gs_->getGame(game_id);
                 if (gameResult)
                 {
-                    std::string board = gs_->renderGameBoard(game_id);
-                    params_.callback(true, board, game);
+                    params_.callback(true, "[✅Successful move]", game);
                 }
                 else
                 {
-                    params_.callback(false, "Failed to get game state", game);
+                    params_.callback(false, "[🚫Failed to get game state]", game);
                 }
             }
             else if (params_.callback)
             {
-                params_.callback(false, "Invalid move", game);
+                params_.callback(false, "[🚫Invalid move]", game);
             }
         }
         catch (std::exception& e)

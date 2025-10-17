@@ -15,7 +15,7 @@ class SendMessageTask final : public Task
         {
             if (params_.callback)
             {
-                params_.callback(false, "There is no active game", params_.from_id);
+                params_.callback(false, "[There is no active game]", params_.from_id);
             }
             return;
         }
@@ -24,7 +24,7 @@ class SendMessageTask final : public Task
         {
             auto game = resp.value();
             auto op = game->getPlayer1() == params_.from_id ? game->getPlayer2() : game->getPlayer1();
-            params_.callback(true, params_.message, op);
+            params_.callback(true, "[From opponent] " + params_.message, op);
         }
         catch (std::exception& e)
         {

@@ -1,22 +1,26 @@
 #pragma once
 
+#include <sstream>
+
 #include "task.h"
 
 class HelpTask final : public Task
 {
    public:
-    explicit HelpTask(HelpParams params) : params_(std::move(params)){};
+    HelpTask(HelpParams params) : params_(std::move(params)) {}
+
     void execute() override
     {
-        std::string commands =
-            "/start — start searching for an opponent\n"
-            "/move <1-7> — make a move\n"
-            "/message <text> — send a message to your opponent\n"
-            "/stop — end the game\n"
-            "/history — get game history\n"
-            "/help — show help";
+        std::stringstream ss;
+        ss << "[Available commands:\n"
+           << "/start - Start a new game\n"
+           << "/move <column> - Make a move\n"
+           << "/stop - Stop current game\n"
+           << "/history - Show your game history\n"
+           << "/message - Send a message to opponent\n"
+           << "/help - Show this help message]";
 
-        params_.callback(commands);
+        params_.callback(ss.str());
     }
 
    private:

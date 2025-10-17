@@ -18,8 +18,8 @@ class StartGameTask final : public Task
         auto g = gs_->getGame(gameId);
         if (!g)
         {
-            params1_.callback("Game does not exist");
-            params2_.callback("Game does not exist");
+            params1_.callback("[Game does not exist]");
+            params2_.callback("[Game does not exist]");
         }
 
         auto game = g.value();
@@ -27,8 +27,8 @@ class StartGameTask final : public Task
         StartGameParams& f = (firstId == params1_.player_id) ? params1_ : params2_;
         StartGameParams& s = (firstId != params1_.player_id) ? params1_ : params2_;
 
-        f.callback("Game created, your move");
-        s.callback("Game created, waiting for opponent’s move");
+        f.callback("[Game created, your move]");
+        s.callback("[Game created, waiting for opponent’s move]");
     }
 
    private:

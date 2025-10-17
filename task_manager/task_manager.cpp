@@ -1,6 +1,7 @@
 #include "task_manager.h"
 
 #include <functional>
+#include <iostream>
 
 #include "task/get_history_task.h"
 #include "task/help_task.h"
@@ -43,24 +44,52 @@ void TaskManager::stop()
     if (worker_.joinable()) worker_.join();
 }
 
+void TaskManager::ensureUserRegistered(int64_t user_id, const std::string& username, const std::string& first_name,
+                                       const std::string& last_name)
+{
+    try
+    {
+        std::lock_guard<std::mutex> lock(registrationMutex_);
+
+        auto user = db_->getUserById(user_id);
+        if (!user)
+        {
+            std::cout << "Registering user: " << user_id << std::endl;
+            db_->addUser(user_id, username, first_name, last_name);
+
+            user = db_->getUserById(user_id);
+            if (!user)
+            {
+                std::cerr << "Failed to register user: " << user_id << std::endl;
+            }
+        }
+    }
+    catch (const std::exception& e)
+    {
+        std::cerr << "Error registering user: " << e.what() << std::endl;
+    }
+}
+
 void TaskManager::addTask(std::shared_ptr<Task> task)
 {
     if (!running_) return;
     taskQueue_.push(std::move(task));
 }
 
-void TaskManager::addStartGameTask(StartGameParams& params)
+void TaskManager::addStartGameTask(StartGameParams params)
 {
+    ensureUserRegistered(params.player_id);
+
     if (gs_->getUserActiveGame(params.player_id))
     {
-        params.callback("Finish the current game before starting a new one!");
+        params.callback("[Finish the current game before starting a new one!]");
         return;
     }
     if (waitToStartQueue_.empty())
     {
         if (params.callback)
         {
-            params.callback("Waiting for an opponent...");
+            params.callback("[Waiting for an opponent...]");
         }
         waitToStartQueue_.push(params);
     }
@@ -72,7 +101,7 @@ void TaskManager::addStartGameTask(StartGameParams& params)
         {
             if (params.callback)
             {
-                params.callback("Failed to find an opponent");
+                params.callback("[Failed to find an opponent]");
             }
             return;
         }
@@ -80,38 +109,41 @@ void TaskManager::addStartGameTask(StartGameParams& params)
         if (params.player_id == op.player_id)
         {
             waitToStartQueue_.push(op);
-            if (params.callback)
-            {
-                params.callback("Cannot play against yourself");
-            }
             return;
         }
+
+        ensureUserRegistered(op.player_id);
 
         addTask(std::make_shared<StartGameTask>(gs_, params, op));
     }
 }
 
-void TaskManager::addStopGameTask(const StopGameParams& params)
+void TaskManager::addStopGameTask(StopGameParams params)
 {
+    ensureUserRegistered(params.player_id);
     addTask(std::make_shared<StopGameTask>(gs_, params));
 }
 
-void TaskManager::addMakeMoveTask(const MakeMoveParams& params)
+void TaskManager::addMakeMoveTask(MakeMoveParams params)
 {
+    ensureUserRegistered(params.player_id);
     addTask(std::make_shared<MakeMoveTask>(gs_, params));
 }
 
-void TaskManager::addSendMessageTask(const SendMessageParams& params)
+void TaskManager::addSendMessageTask(SendMessageParams params)
 {
+    ensureUserRegistered(params.from_id);
     addTask(std::make_shared<SendMessageTask>(gs_, params));
 }
 
-void TaskManager::addGetHistoryTask(const GetHistoryParams& params)
+void TaskManager::addGetHistoryTask(GetHistoryParams params)
 {
+    ensureUserRegistered(params.player_id);
     addTask(std::make_shared<GetHistoryTask>(db_, params));
 }
 
-void TaskManager::addHelpTask(const HelpParams& params)
+void TaskManager::addHelpTask(HelpParams params)
 {
+    ensureUserRegistered(params.player_id);
     addTask(std::make_shared<HelpTask>(params));
 }
