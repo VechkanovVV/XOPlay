@@ -12,14 +12,25 @@ class SendMessageCommand : public Command
     std::string description() const override { return desc; }
     void execute(const TgBot::Message::Ptr& message) override
     {
+        if (!message || !message->chat)
+        {
+            return;
+        }
+
         std::istringstream iss(message->text);
         std::string command;
+        iss >> command;
         std::string mess;
+        std::getline(iss, mess);
 
-        iss >> command >> mess;
+        if (!mess.empty() && mess[0] == ' ')
+        {
+            mess.erase(0, 1);
+        }
+
         if (iss.fail())
         {
-            bot_->getApi().sendMessage(message->chat->id, "Invalid format. Use: /message <text>");
+            bot_->getApi().sendMessage(message->chat->id, "[Invalid format. Use: /message <text>]");
             return;
         }
 
@@ -31,11 +42,11 @@ class SendMessageCommand : public Command
             if (succ)
             {
                 bot_->getApi().sendMessage(target, message);
-                bot_->getApi().sendMessage(chatId, "Seccess");
+                bot_->getApi().sendMessage(chatId, "[✅Message delivered]");
             }
             else
             {
-                bot_->getApi().sendMessage(chatId, "Fail");
+                bot_->getApi().sendMessage(chatId, "[⚠️ Message not delivered]");
                 bot_->getApi().sendMessage(chatId, message);
             }
         };

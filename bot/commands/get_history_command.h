@@ -11,7 +11,7 @@ class GetHistoryCommand : public Command
 
     void execute(const TgBot::Message::Ptr& message) override
     {
-        if (!message || !message->from)
+        if (!message || !message->chat)
         {
             return;
         }

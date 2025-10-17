@@ -12,6 +12,10 @@ class StopGameCommand : public Command
     std::string description() const override { return desc; }
     void execute(const TgBot::Message::Ptr& message) override
     {
+        if (!message || !message->chat)
+        {
+            return;
+        }
         StopGameParams params;
         params.player_id = message->chat->id;
         params.callback = [this](std::string message, int64_t target) { bot_->getApi().sendMessage(target, message); };

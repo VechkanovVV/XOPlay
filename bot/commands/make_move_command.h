@@ -15,6 +15,11 @@ class MakeMoveCommand : public Command
     std::string description() const override { return desc; }
     void execute(const TgBot::Message::Ptr& message) override
     {
+        if (!message || !message->chat)
+        {
+            return;
+        }
+
         std::istringstream iss(message->text);
         std::string command;
         int pos;
@@ -22,7 +27,7 @@ class MakeMoveCommand : public Command
         iss >> command >> pos;
         if (iss.fail())
         {
-            bot_->getApi().sendMessage(message->chat->id, "Invalid format. Use: /move <column>");
+            bot_->getApi().sendMessage(message->chat->id, "[Invalid format. Use: /move <column>]");
             return;
         }
 
@@ -30,14 +35,33 @@ class MakeMoveCommand : public Command
         params.player_id = message->chat->id;
         params.position = pos;
         params.callback =
-            [this, chatId = message->chat->id](bool succ, std::string result, std::shared_ptr<GameLogic> gl)
+            [this, chatId = message->chat->id, move = pos](bool succ, std::string result, std::shared_ptr<GameLogic> gl)
         {
             if (succ && gl)
             {
                 auto op = gl->getPlayer1() == chatId ? gl->getPlayer2() : gl->getPlayer1();
-                bot_->getApi().sendMessage(op, gl->getBoardString());
-                bot_->getApi().sendMessage(chatId, gl->getBoardString());
-                bot_->getApi().sendMessage(chatId, result);
+                std::string res, opres;
+                if (gl->isWinner(chatId))
+                {
+                    res = "[🏆Congrats! You win!]";
+                    opres = "[😞You lose]";
+                }
+                else if (gl->isDraw())
+                {
+                    res = "[🤝It’s a draw — game over]";
+                    opres = "[🤝It’s a draw — game over]";
+                }
+                else
+                {
+                    res = "[Wait for opponent’s move…]";
+                    opres = "[Your turn]";
+                }
+                std::ostringstream opms;
+                opms << "[Opponent's move: " << move << "]\n" << gl->renderBoard() << "\n" << opres;
+                bot_->getApi().sendMessage(op, opms.str());
+                std::ostringstream ms;
+                ms << result << "\n" << gl->renderBoard() << "\n" << res;
+                bot_->getApi().sendMessage(chatId, ms.str());
             }
             else
             {

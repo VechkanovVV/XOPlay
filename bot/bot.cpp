@@ -43,13 +43,15 @@ void Bot::registerCommands()
 
 void Bot::registerDefaultHandlers()
 {
-    for (const auto& [commandName, commandHandler] : commands_)
+    for (const auto& pair : commands_)
     {
+        const std::string& commandName = pair.first;
         std::string cmdName = commandName.substr(1);
 
         bot_->getEvents().onCommand(cmdName,
                                     [this, commandName](TgBot::Message::Ptr message)
                                     {
+                                        std::cout << "Received command: " << commandName << std::endl;
                                         auto it = commands_.find(commandName);
                                         if (it != commands_.end())
                                         {
@@ -57,6 +59,7 @@ void Bot::registerDefaultHandlers()
                                         }
                                     });
     }
+
     bot_->getEvents().onNonCommandMessage(
         [this](TgBot::Message::Ptr message)
         {

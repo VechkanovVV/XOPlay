@@ -12,6 +12,11 @@ class StartGameCommand : public Command
     std::string description() const override { return desc; }
     void execute(const TgBot::Message::Ptr& message) override
     {
+        if (!message || !message->chat)
+        {
+            return;
+        }
+
         StartGameParams params;
         params.player_id = message->chat->id;
         params.callback = [this, chatId = message->chat->id](std::string message)

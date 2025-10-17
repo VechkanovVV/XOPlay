@@ -1,5 +1,7 @@
 #pragma once
 
+#include <iostream>
+
 #include "command.h"
 
 class HelpCommand : public Command
@@ -10,7 +12,7 @@ class HelpCommand : public Command
     std::string description() const override { return desc; }
     void execute(const TgBot::Message::Ptr& message) override
     {
-        if (!message || !message->from)
+        if (!message || !message->chat)
         {
             return;
         }
