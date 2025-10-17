@@ -30,7 +30,7 @@
 
 ## Example interaction (short)
 
-Below is a short, **anonymized** example that explicitly shows which messages are **user commands** and which messages are **bot responses**. This demonstrates how commands trigger bot replies (e.g. `/start` triggers the bot to post `[Waiting for an opponent...]`).
+Below is a short example that explicitly shows which messages are **user commands** and which messages are **bot responses**. This demonstrates how commands trigger bot replies (e.g. `/start` triggers the bot to post `[Waiting for an opponent...]`).
 
 ```
 User: /start
@@ -102,28 +102,6 @@ Bot: [Available commands:
 /help - Show this help message]
 ```
 
----------------------+
-| .  .  .  .  .  .  . |
-| .  .  .  .  .  .  . |
-| .  .  .  .  .  .  . |
-| .  .  .  .  .  .  . |
-| .  .  .  .  .  .  . |
-| .  X  .  .  .  .  . |
-+---------------------+
-[Your turn]
-
-[18.10.2025 00:11] Vlad: /move 2
-[18.10.2025 00:11] Bot: [✅ Successful move]
-[18.10.2025 00:11] Bot: [Wait for opponent’s move…]
-
-[18.10.2025 00:12] Vlad: /message haha hi
-[18.10.2025 00:12] Bot: [✅ Message delivered]
-
-... (game continues)
-
-[18.10.2025 00:14] Bot: [🏆 Congrats! You win!]
-
-````
 
 ---
 
@@ -145,7 +123,6 @@ POSTGRES_DB=gamedb
 BOT_TOKEN=your_telegram_bot_token_here
 ```
 
-> **Important:** Do **not** commit your real bot token or passwords to a public repository. Use environment variables or a secret manager in production.
 
 3. Run with Docker Compose (recommended):
 
@@ -178,26 +155,3 @@ make -j$(nproc)
 * CMake & a C++ compiler (e.g. clang or gcc)
 
 ---
-
-## Running & Deployment
-
-* Use Docker Compose to run the bot and a local Postgres instance for development.
-* For production, set environment variables and run the compiled binary or container behind a process manager.
-
----
-
-## Contributing
-
-Contributions, bug reports and feature suggestions are welcome. Please open an issue or submit a pull request.
-
----
-
-## License
-
-This project is open-source — add your preferred license here (e.g. MIT).
-
----
-
-## Contact
-
-Vlad Vechkanov — GitHub: [VechkanovVV](https://github.com/VechkanovVV)
