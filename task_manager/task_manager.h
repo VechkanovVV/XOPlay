@@ -22,7 +22,7 @@ class TaskManager final
 
     void stop();
 
-    void addStartGameTask(const StartGameParams& params);
+    void addStartGameTask(StartGameParams& params);
     void addStopGameTask(const StopGameParams& params);
     void addMakeMoveTask(const MakeMoveParams& params);
     void addSendMessageTask(const SendMessageParams& params);
@@ -35,7 +35,7 @@ class TaskManager final
     std::shared_ptr<ThreadPool> threadPool_;
 
     ThreadsafeQueue<std::shared_ptr<Task>> taskQueue_;
-    ThreadsafeQueue<std::shared_ptr<Task>> waitToStartQueue_;
+    ThreadsafeQueue<StartGameParams> waitToStartQueue_;
 
     std::atomic<bool> running_;
 

@@ -12,35 +12,45 @@ class MakeMoveTask final : public Task
     MakeMoveTask(std::shared_ptr<GameService> gs, MakeMoveParams params) : gs_(gs), params_(std::move(params)) {}
     void execute() override
     {
+        auto resp = gs_->getUserActiveGame(params_.player_id);
+        if (!resp)
+        {
+            if (params_.callback)
+            {
+                params_.callback(false, "There is no active game", nullptr);
+            }
+            return;
+        }
+
         try
         {
-            bool success = gs_->makeMove(params_.game_id, params_.player_id, params_.position);
+            auto game = resp.value();
+            auto game_id = game->getId();
+            bool success = gs_->makeMove(game_id, params_.player_id, params_.position);
 
             if (success && params_.callback)
             {
-                auto gameResult = gs_->getGame(params_.game_id);
+                auto gameResult = gs_->getGame(game_id);
                 if (gameResult)
                 {
-                    auto game = gameResult.value();
-                    std::string board = gs_->renderGameBoard(params_.game_id);
-                    params_.callback(true, board);
+                    std::string board = gs_->renderGameBoard(game_id);
+                    params_.callback(true, board, game);
                 }
                 else
                 {
-                    params_.callback(false, "Failed to get game state");
+                    params_.callback(false, "Failed to get game state", game);
                 }
             }
             else if (params_.callback)
             {
-                params_.callback(false, "Invalid move");
+                params_.callback(false, "Invalid move", game);
             }
         }
-
         catch (std::exception& e)
         {
             if (params_.callback)
             {
-                params_.callback(false, e.what());
+                params_.callback(false, e.what(), resp.value());
             }
         }
     }

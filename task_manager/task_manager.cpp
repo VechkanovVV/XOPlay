@@ -49,14 +49,51 @@ void TaskManager::addTask(std::shared_ptr<Task> task)
     taskQueue_.push(std::move(task));
 }
 
-void TaskManager::addStartGameTask(const StartGameParams& params)
+void TaskManager::addStartGameTask(StartGameParams& params)
 {
-    addTask(std::make_shared<StartGameTask>(gs_, params));
+    if (gs_->getUserActiveGame(params.player_id))
+    {
+        params.callback("Finish the current game before starting a new one!");
+        return;
+    }
+    if (waitToStartQueue_.empty())
+    {
+        if (params.callback)
+        {
+            params.callback("Waiting for an opponent...");
+        }
+        waitToStartQueue_.push(params);
+    }
+    else
+    {
+        StartGameParams op;
+        bool suc = waitToStartQueue_.waitAndPop(op);
+        if (!suc)
+        {
+            if (params.callback)
+            {
+                params.callback("Failed to find an opponent");
+            }
+            return;
+        }
+
+        if (params.player_id == op.player_id)
+        {
+            waitToStartQueue_.push(op);
+            if (params.callback)
+            {
+                params.callback("Cannot play against yourself");
+            }
+            return;
+        }
+
+        addTask(std::make_shared<StartGameTask>(gs_, params, op));
+    }
 }
 
 void TaskManager::addStopGameTask(const StopGameParams& params)
 {
-    addTask(std::make_shared<StopGameTask>(db_, params));
+    addTask(std::make_shared<StopGameTask>(gs_, params));
 }
 
 void TaskManager::addMakeMoveTask(const MakeMoveParams& params)
@@ -66,7 +103,7 @@ void TaskManager::addMakeMoveTask(const MakeMoveParams& params)
 
 void TaskManager::addSendMessageTask(const SendMessageParams& params)
 {
-    addTask(std::make_shared<SendMessageTask>(db_, params));
+    addTask(std::make_shared<SendMessageTask>(gs_, params));
 }
 
 void TaskManager::addGetHistoryTask(const GetHistoryParams& params)

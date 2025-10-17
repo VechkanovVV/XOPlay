@@ -4,35 +4,32 @@
 #include <string>
 
 #include "db_service.h"
+#include "game/game_logic.h"
 
 struct StartGameParams
 {
-    int64_t initiator_id;
-    int64_t opponent_id;
-    std::function<void(int)> callback;
+    int64_t player_id;
+    std::function<void(std::string)> callback;
 };
 
 struct StopGameParams
 {
-    int game_id;
     int64_t player_id;
-    std::function<void(bool)> callback;
+    std::function<void(std::string, int64_t)> callback;
 };
 
 struct MakeMoveParams
 {
-    int game_id;
     int64_t player_id;
     int position;
-    std::function<void(bool, std::string)> callback;
+    std::function<void(bool, std::string, std::shared_ptr<GameLogic> gl)> callback;
 };
 
 struct SendMessageParams
 {
     int64_t from_id;
-    int64_t to_id;
     std::string message;
-    std::function<void(bool, std::string)> callback;
+    std::function<void(bool, std::string, int64_t)> callback;
 };
 
 struct GetHistoryParams

@@ -6,22 +6,36 @@
 class SendMessageTask final : public Task
 {
    public:
-    SendMessageTask(std::shared_ptr<DbService> db, SendMessageParams params) : db_(db), params_(std::move(params)) {}
+    SendMessageTask(std::shared_ptr<GameService> gs, SendMessageParams params) : gs_(gs), params_(std::move(params)) {}
 
     void execute() override
     {
-        auto game = db_->getActiveGameByPlayers(params_.from_id, params_.to_id);
-        if (game && (game->status == "pending" || game->status == "active"))
+        auto resp = gs_->getUserActiveGame(params_.from_id);
+        if (!resp)
         {
-            params_.callback(true, params_.message);
+            if (params_.callback)
+            {
+                params_.callback(false, "There is no active game", params_.from_id);
+            }
+            return;
         }
-        else
+
+        try
         {
-            params_.callback(false, "");
+            auto game = resp.value();
+            auto op = game->getPlayer1() == params_.from_id ? game->getPlayer2() : game->getPlayer1();
+            params_.callback(true, params_.message, op);
+        }
+        catch (std::exception& e)
+        {
+            if (params_.callback)
+            {
+                params_.callback(false, e.what(), params_.from_id);
+            }
         }
     }
 
    private:
-    std::shared_ptr<DbService> db_;
+    std::shared_ptr<GameService> gs_;
     SendMessageParams params_;
 };
