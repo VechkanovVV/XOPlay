@@ -125,34 +125,34 @@ void GameLogic::setBoardFromString(const std::string& board)
 std::string GameLogic::renderBoard() const
 {
     std::stringstream ss;
-    ss << "  ";
+    ss << "   ";
     for (int col = 0; col < COLS; ++col)
     {
-        ss << col + 1 << ' ';
+        ss << (col + 1) << "  ";
     }
     ss << "\n";
 
-    ss << " +";
+    ss << "  +";
     for (int col = 0; col < COLS; ++col)
     {
-        ss << "--";
+        ss << "---";
     }
     ss << "+\n";
 
     for (int row = ROWS - 1; row >= 0; --row)
     {
-        ss << " |";
+        ss << "  |";
         for (int col = 0; col < COLS; ++col)
         {
-            ss << board_[row][col] << ' ';
+            ss << ' ' << board_[row][col] << ' ';
         }
         ss << "|\n";
     }
 
-    ss << " +";
+    ss << "  +";
     for (int col = 0; col < COLS; ++col)
     {
-        ss << "--";
+        ss << "---";
     }
     ss << "+";
 
@@ -214,11 +214,11 @@ char GameLogic::getPlayerSymbol(int64_t player_id) const
 {
     if (player_id == player1_id_)
     {
-        return 'X';
+        return 'x';
     }
     else if (player_id == player2_id_)
     {
-        return 'O';
+        return 'o';
     }
     else
     {
